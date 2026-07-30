@@ -19,9 +19,10 @@ export type AppShellProps = {
   appName: string;
   nav: NavItem[];
   user: AppUser;
-  /** Optionaler Slot in der Metazeile (links vom SharePoint-Link). */
-  status?: ReactNode;
+  /** Slot direkt nach dem App-Namen (z. B. PeriodPicker). */
   actions?: ReactNode;
+  /** Slot rechts vor SharePoint (z. B. StatusPill, Sync). */
+  status?: ReactNode;
   sharepointUrl?: string;
   sharepointLabel?: string;
   /** Blaue Wortmarke (helle Flächen). Ohne Pfad: Bildmarke als Fallback. */
@@ -177,9 +178,12 @@ export function AppShell({
               {appName}
             </span>
 
+            {actions ? (
+              <div className="hidden min-w-0 items-center gap-1.5 sm:flex">{actions}</div>
+            ) : null}
+
             <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
-              {actions ? <div className="hidden items-center sm:flex">{actions}</div> : null}
-              {status ? <div className="hidden items-center md:flex">{status}</div> : null}
+              {status ? <div className="hidden items-center gap-1.5 md:flex">{status}</div> : null}
 
               {sharepointUrl ? (
                 <a
