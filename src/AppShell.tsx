@@ -350,10 +350,10 @@ export function AppShell({
                   <img
                     src={logoSrc}
                     alt={logoAlt}
-                    className="h-8 w-auto object-contain object-right sm:h-9"
+                    className="h-8 w-auto max-w-[11rem] object-contain object-right sm:h-9 sm:max-w-[13rem]"
                   />
                 ) : (
-                  <Logo size={28} variant="full" className="text-jh-blau" />
+                  <Logo size={36} variant="full" className="text-jh-blau" />
                 )}
               </a>
             </div>
