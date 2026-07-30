@@ -179,11 +179,11 @@ export function AppShell({
             </span>
 
             {actions ? (
-              <div className="hidden min-w-0 items-center gap-1.5 sm:flex">{actions}</div>
+              <div className="flex min-w-0 items-center gap-1.5">{actions}</div>
             ) : null}
 
             <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
-              {status ? <div className="hidden items-center gap-1.5 md:flex">{status}</div> : null}
+              {status ? <div className="flex items-center gap-1.5">{status}</div> : null}
 
               {sharepointUrl ? (
                 <a
