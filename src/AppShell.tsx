@@ -19,19 +19,22 @@ export type AppShellProps = {
   appName: string;
   nav: NavItem[];
   user: AppUser;
+  /** Optionaler Slot in der Metazeile (links vom SharePoint-Link). */
   status?: ReactNode;
   actions?: ReactNode;
   sharepointUrl?: string;
+  sharepointLabel?: string;
+  /** Blaue Wortmarke (helle Flächen). Ohne Pfad: Bildmarke als Fallback. */
+  logoSrc?: string;
+  logoAlt?: string;
   /** Abmelde-URL. Default: `/auth/signout` */
   signOutHref?: string;
-  /** Aktueller Pfad für Aktiv-State. Ohne Next-Hook – die App übergibt ihn. */
   pathname?: string;
   children: ReactNode;
 };
 
 const MAX_TOP = 5;
 const SIGN_OUT_DEFAULT = "/auth/signout";
-/** Gemeinsamer Storage-Key für Theme (Apps können denselben Key nutzen). */
 export const JH_THEME_KEY = "jh-theme";
 
 function isActive(pathname: string | undefined, href: string): boolean {
@@ -66,8 +69,8 @@ function applyTheme(next: "light" | "dark") {
 }
 
 /**
- * Gemeinsame App-Chrome. Layout und Verhalten sind fest –
- * nicht über Props überschreibbar (Höhe, Sticky, Nav-Regeln, Slot-Reihenfolge).
+ * App-Chrome Variante B (Homepage-ähnlich, zweizeilig, weißer Grund):
+ * Meta-Zeile + Navigationszeile mit blauer Unterlinie, Aktiv in Hebel-Blau.
  */
 export function AppShell({
   appName,
@@ -76,6 +79,9 @@ export function AppShell({
   status,
   actions,
   sharepointUrl,
+  sharepointLabel = "SharePoint",
+  logoSrc,
+  logoAlt = "Josef Hebel",
   signOutHref = SIGN_OUT_DEFAULT,
   pathname,
   children,
@@ -105,9 +111,7 @@ export function AppShell({
     let timer: ReturnType<typeof setTimeout> | null = null;
     function onScroll() {
       if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        setScrolled(window.scrollY > 2);
-      }, 200);
+      timer = setTimeout(() => setScrolled(window.scrollY > 2), 200);
     }
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -150,182 +154,208 @@ export function AppShell({
     <div className="min-h-screen bg-jh-surface-alt font-sans text-jh-text">
       <header
         className={[
-          "sticky top-0 z-50 h-jh-header border-b border-jh-border bg-jh-surface/85 backdrop-blur-sm",
-          "transition-[box-shadow] duration-jh",
+          "sticky top-0 z-50 bg-jh-surface transition-[box-shadow] duration-jh",
+          scrolled ? "shadow-sm" : "",
         ].join(" ")}
         style={{
           boxShadow: scrolled ? "var(--jh-shadow-scrolled)" : "var(--jh-shadow-header)",
         }}
       >
-        <div className="mx-auto flex h-full max-w-[1600px] items-stretch gap-3 px-3 sm:px-4">
-          {/* Brand */}
-          <div className="flex shrink-0 items-center gap-2">
+        {/* Zeile 1 – Metazeile */}
+        <div className="border-b border-jh-border">
+          <div className="mx-auto flex h-9 max-w-[1600px] items-center gap-3 px-3 sm:px-4">
             <button
               type="button"
-              className="rounded-jh p-1.5 text-jh-text-muted lg:hidden hover:bg-black/[0.03]"
+              className="rounded-jh p-1 text-jh-text-muted lg:hidden hover:bg-black/[0.03]"
               aria-label="Menü"
               onClick={() => setMobileOpen(true)}
             >
               <MenuIcon />
             </button>
-            <a href="/" className="flex items-center gap-2 text-jh-blau">
-              <Logo size={22} variant="mark" className="shrink-0" />
-              <span className="text-[15px] font-medium tracking-[-0.01em] text-jh-text">
-                {appName}
-              </span>
-            </a>
-          </div>
 
-          {/* Desktop nav */}
-          <nav className="relative hidden min-w-0 flex-1 items-stretch lg:flex" aria-label="Hauptnavigation">
-            <ul className="flex min-w-0 items-stretch gap-0.5">
-              {top.map((item) => (
-                <NavTab
-                  key={item.href + item.label}
-                  item={item}
-                  pathname={pathname}
-                />
-              ))}
-              {mehr.length > 0 ? (
-                <li ref={mehrRef} className="relative flex items-stretch">
-                  <button
-                    type="button"
-                    aria-expanded={mehrOpen}
-                    aria-haspopup="menu"
-                    onClick={() => setMehrOpen((o) => !o)}
-                    className={[
-                      "relative flex items-center gap-1 rounded-jh px-2.5 text-sm transition-colors duration-jh",
-                      mehr.some((m) => isActive(pathname, m.href) || m.children?.some((c) => isActive(pathname, c.href)))
-                        ? "bg-jh-blau-tint font-medium text-jh-blau"
-                        : "text-jh-text-muted hover:bg-black/[0.03]",
-                    ].join(" ")}
+            <span className="min-w-0 truncate text-xs font-medium text-jh-text sm:text-[13px]">
+              {appName}
+            </span>
+
+            <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
+              {actions ? <div className="hidden items-center sm:flex">{actions}</div> : null}
+              {status ? <div className="hidden items-center md:flex">{status}</div> : null}
+
+              {sharepointUrl ? (
+                <a
+                  href={sharepointUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden rounded-jh px-2 py-1 text-xs text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03] hover:text-jh-blau sm:inline"
+                >
+                  {sharepointLabel}
+                </a>
+              ) : null}
+
+              <div ref={avatarRef} className="relative">
+                <button
+                  type="button"
+                  aria-expanded={avatarOpen}
+                  aria-haspopup="menu"
+                  onClick={() => setAvatarOpen((o) => !o)}
+                  className="flex max-w-[11rem] items-center gap-1.5 rounded-jh px-1.5 py-0.5 text-xs text-jh-text transition-colors duration-jh hover:bg-black/[0.03] sm:max-w-[14rem]"
+                  aria-label="Benutzermenü"
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-jh-blau-tint text-[10px] font-medium text-jh-blau">
+                    {initialen}
+                  </span>
+                  <span className="hidden truncate sm:inline">{displayName}</span>
+                  <Chevron />
+                </button>
+                {avatarOpen ? (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full z-50 mt-1.5 w-64 rounded-jh border border-jh-border bg-jh-surface py-1 shadow-lg"
                   >
-                    Mehr
-                    <Chevron />
-                    {mehr.some((m) => isActive(pathname, m.href) || m.children?.some((c) => isActive(pathname, c.href))) ? (
-                      <span
-                        className="absolute inset-x-0 bottom-0 h-0.5"
-                        style={{ background: "var(--jh-gelb)" }}
-                        aria-hidden
-                      />
+                    <div className="border-b border-jh-border px-3 py-2.5">
+                      <p className="text-sm font-medium text-jh-text">{displayName}</p>
+                      {user.rolle ? (
+                        <p className="mt-0.5 text-xs text-jh-text-muted">{user.rolle}</p>
+                      ) : null}
+                    </div>
+                    {sharepointUrl ? (
+                      <a
+                        role="menuitem"
+                        href={sharepointUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block px-3 py-2 text-sm text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03] sm:hidden"
+                        onClick={() => setAvatarOpen(false)}
+                      >
+                        {sharepointLabel}
+                      </a>
                     ) : null}
-                  </button>
-                  {mehrOpen ? (
-                    <ul
-                      role="menu"
-                      className="absolute left-0 top-full z-50 mt-1 min-w-[11rem] rounded-jh border border-jh-border bg-jh-surface py-1 shadow-lg"
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        toggleTheme();
+                        setAvatarOpen(false);
+                      }}
+                      className="flex w-full px-3 py-2 text-left text-sm text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03]"
                     >
-                      {mehr.map((item) => (
-                        <li key={item.href + item.label} role="none">
-                          <a
-                            role="menuitem"
-                            href={item.href}
-                            onClick={() => setMehrOpen(false)}
-                            className={[
-                              "block px-3 py-2 text-sm transition-colors duration-jh",
-                              isActive(pathname, item.href)
-                                ? "bg-jh-blau-tint font-medium text-jh-blau"
-                                : "text-jh-text-muted hover:bg-black/[0.03]",
-                            ].join(" ")}
-                          >
-                            {item.label}
-                          </a>
-                          {item.children?.map((child) => (
+                      {theme === "dark" ? "Hellmodus" : "Dunkelmodus"}
+                    </button>
+                    <form action={signOutHref} method="post">
+                      <button
+                        type="submit"
+                        role="menuitem"
+                        className="flex w-full border-t border-jh-border px-3 py-2 text-left text-sm text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03]"
+                      >
+                        Abmelden
+                      </button>
+                    </form>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Zeile 2 – Navigation + Logo, blaue Unterlinie */}
+        <div className="border-b-2 border-jh-blau">
+          <div className="mx-auto flex h-12 max-w-[1600px] items-stretch gap-3 px-3 sm:h-14 sm:px-4">
+            <nav
+              className="relative hidden min-w-0 flex-1 items-stretch lg:flex"
+              aria-label="Hauptnavigation"
+            >
+              <ul className="flex min-w-0 items-stretch gap-0.5">
+                {top.map((item) => (
+                  <NavTab key={item.href + item.label} item={item} pathname={pathname} />
+                ))}
+                {mehr.length > 0 ? (
+                  <li ref={mehrRef} className="relative flex items-stretch">
+                    <button
+                      type="button"
+                      aria-expanded={mehrOpen}
+                      aria-haspopup="menu"
+                      onClick={() => setMehrOpen((o) => !o)}
+                      className={[
+                        "relative flex items-center gap-1 px-2.5 text-sm transition-colors duration-jh",
+                        mehr.some(
+                          (m) =>
+                            isActive(pathname, m.href) ||
+                            m.children?.some((c) => isActive(pathname, c.href)),
+                        )
+                          ? "font-medium text-jh-blau"
+                          : "font-normal text-jh-blau/80 hover:text-jh-blau",
+                      ].join(" ")}
+                    >
+                      Mehr
+                      <Chevron />
+                      {mehr.some(
+                        (m) =>
+                          isActive(pathname, m.href) ||
+                          m.children?.some((c) => isActive(pathname, c.href)),
+                      ) ? (
+                        <span
+                          className="absolute inset-x-0 bottom-0 h-0.5 bg-jh-blau"
+                          aria-hidden
+                        />
+                      ) : null}
+                    </button>
+                    {mehrOpen ? (
+                      <ul
+                        role="menu"
+                        className="absolute left-0 top-full z-50 mt-0 min-w-[11rem] border border-jh-border border-t-2 border-t-jh-blau bg-jh-surface py-1 shadow-lg"
+                      >
+                        {mehr.map((item) => (
+                          <li key={item.href + item.label} role="none">
                             <a
-                              key={child.href + child.label}
                               role="menuitem"
-                              href={child.href}
+                              href={item.href}
                               onClick={() => setMehrOpen(false)}
                               className={[
-                                "block px-3 py-2 pl-5 text-sm transition-colors duration-jh",
-                                isActive(pathname, child.href)
-                                  ? "bg-jh-blau-tint font-medium text-jh-blau"
-                                  : "text-jh-text-muted hover:bg-black/[0.03]",
+                                "block px-3 py-2 text-sm transition-colors duration-jh",
+                                isActive(pathname, item.href)
+                                  ? "font-medium text-jh-blau"
+                                  : "text-jh-text-muted hover:bg-black/[0.03] hover:text-jh-blau",
                               ].join(" ")}
                             >
-                              {child.label}
+                              {item.label}
                             </a>
-                          ))}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </li>
-              ) : null}
-            </ul>
-          </nav>
-
-          {/* Rechts: actions → status → Suche → Avatar */}
-          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-            {actions ? <div className="hidden items-center sm:flex">{actions}</div> : null}
-            {status ? <div className="hidden items-center md:flex">{status}</div> : null}
-
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-jh text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03]"
-              aria-label="Suche (Ctrl+K)"
-              title="Suche (Ctrl+K)"
-            >
-              <SearchIcon />
-            </button>
-
-            <div ref={avatarRef} className="relative">
-              <button
-                type="button"
-                aria-expanded={avatarOpen}
-                aria-haspopup="menu"
-                onClick={() => setAvatarOpen((o) => !o)}
-                className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-jh-blau-tint text-[11px] font-semibold text-jh-blau transition-colors duration-jh hover:bg-jh-blau hover:text-jh-surface"
-                aria-label="Benutzermenü"
-              >
-                {initialen}
-              </button>
-              {avatarOpen ? (
-                <div
-                  role="menu"
-                  className="absolute right-0 top-full z-50 mt-1.5 w-64 rounded-jh border border-jh-border bg-jh-surface py-1 shadow-lg"
-                >
-                  <div className="border-b border-jh-border px-3 py-2.5">
-                    <p className="text-sm font-medium text-jh-text">{displayName}</p>
-                    {user.rolle ? (
-                      <p className="mt-0.5 text-xs text-jh-text-muted">{user.rolle}</p>
+                            {item.children?.map((child) => (
+                              <a
+                                key={child.href + child.label}
+                                role="menuitem"
+                                href={child.href}
+                                onClick={() => setMehrOpen(false)}
+                                className={[
+                                  "block px-3 py-2 pl-5 text-sm transition-colors duration-jh",
+                                  isActive(pathname, child.href)
+                                    ? "font-medium text-jh-blau"
+                                    : "text-jh-text-muted hover:bg-black/[0.03] hover:text-jh-blau",
+                                ].join(" ")}
+                              >
+                                {child.label}
+                              </a>
+                            ))}
+                          </li>
+                        ))}
+                      </ul>
                     ) : null}
-                  </div>
-                  {sharepointUrl ? (
-                    <a
-                      role="menuitem"
-                      href={sharepointUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block px-3 py-2 text-sm text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03]"
-                      onClick={() => setAvatarOpen(false)}
-                    >
-                      SharePoint
-                    </a>
-                  ) : null}
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      toggleTheme();
-                      setAvatarOpen(false);
-                    }}
-                    className="flex w-full px-3 py-2 text-left text-sm text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03]"
-                  >
-                    {theme === "dark" ? "Hellmodus" : "Dunkelmodus"}
-                  </button>
-                  <form action={signOutHref} method="post">
-                    <button
-                      type="submit"
-                      role="menuitem"
-                      className="flex w-full border-t border-jh-border px-3 py-2 text-left text-sm text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03]"
-                    >
-                      Abmelden
-                    </button>
-                  </form>
-                </div>
-              ) : null}
+                  </li>
+                ) : null}
+              </ul>
+            </nav>
+
+            <div className="ml-auto flex shrink-0 items-center py-2">
+              <a href="/" className="flex items-center" aria-label="Zur Startseite">
+                {logoSrc ? (
+                  <img
+                    src={logoSrc}
+                    alt={logoAlt}
+                    className="h-8 w-auto object-contain object-right sm:h-9"
+                  />
+                ) : (
+                  <Logo size={28} variant="full" className="text-jh-blau" />
+                )}
+              </a>
             </div>
           </div>
         </div>
@@ -369,6 +399,11 @@ function NavTab({ item, pathname }: { item: NavItem; pathname?: string }) {
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
+  const baseCls = [
+    "relative flex items-center gap-1 px-2.5 text-sm transition-colors duration-jh",
+    active ? "font-medium text-jh-blau" : "font-normal text-jh-blau/80 hover:text-jh-blau",
+  ].join(" ");
+
   return (
     <li ref={ref} className="relative flex items-stretch">
       {hasChildren ? (
@@ -378,27 +413,18 @@ function NavTab({ item, pathname }: { item: NavItem; pathname?: string }) {
             aria-expanded={open}
             aria-haspopup="menu"
             onClick={() => setOpen((o) => !o)}
-            className={[
-              "relative flex items-center gap-1 rounded-jh px-2.5 text-sm transition-colors duration-jh",
-              active
-                ? "bg-jh-blau-tint font-medium text-jh-blau"
-                : "text-jh-text-muted hover:bg-black/[0.03]",
-            ].join(" ")}
+            className={baseCls}
           >
             {item.label}
             <Chevron />
             {active ? (
-              <span
-                className="absolute inset-x-0 bottom-0 h-0.5"
-                style={{ background: "var(--jh-gelb)" }}
-                aria-hidden
-              />
+              <span className="absolute inset-x-0 bottom-0 h-0.5 bg-jh-blau" aria-hidden />
             ) : null}
           </button>
           {open ? (
             <ul
               role="menu"
-              className="absolute left-0 top-full z-50 mt-1 min-w-[11rem] rounded-jh border border-jh-border bg-jh-surface py-1 shadow-lg"
+              className="absolute left-0 top-full z-50 mt-0 min-w-[11rem] border border-jh-border border-t-2 border-t-jh-blau bg-jh-surface py-1 shadow-lg"
             >
               <li role="none">
                 <a
@@ -408,8 +434,8 @@ function NavTab({ item, pathname }: { item: NavItem; pathname?: string }) {
                   className={[
                     "block px-3 py-2 text-sm transition-colors duration-jh",
                     isActive(pathname, item.href)
-                      ? "bg-jh-blau-tint font-medium text-jh-blau"
-                      : "text-jh-text-muted hover:bg-black/[0.03]",
+                      ? "font-medium text-jh-blau"
+                      : "text-jh-text-muted hover:bg-black/[0.03] hover:text-jh-blau",
                   ].join(" ")}
                 >
                   {item.label}
@@ -424,8 +450,8 @@ function NavTab({ item, pathname }: { item: NavItem; pathname?: string }) {
                     className={[
                       "block px-3 py-2 text-sm transition-colors duration-jh",
                       isActive(pathname, child.href)
-                        ? "bg-jh-blau-tint font-medium text-jh-blau"
-                        : "text-jh-text-muted hover:bg-black/[0.03]",
+                        ? "font-medium text-jh-blau"
+                        : "text-jh-text-muted hover:bg-black/[0.03] hover:text-jh-blau",
                     ].join(" ")}
                   >
                     {child.label}
@@ -436,22 +462,10 @@ function NavTab({ item, pathname }: { item: NavItem; pathname?: string }) {
           ) : null}
         </>
       ) : (
-        <a
-          href={item.href}
-          className={[
-            "relative flex items-center rounded-jh px-2.5 text-sm transition-colors duration-jh",
-            active
-              ? "bg-jh-blau-tint font-medium text-jh-blau"
-              : "text-jh-text-muted hover:bg-black/[0.03]",
-          ].join(" ")}
-        >
+        <a href={item.href} className={baseCls} aria-current={active ? "page" : undefined}>
           {item.label}
           {active ? (
-            <span
-              className="absolute inset-x-0 bottom-0 h-0.5"
-              style={{ background: "var(--jh-gelb)" }}
-              aria-hidden
-            />
+            <span className="absolute inset-x-0 bottom-0 h-0.5 bg-jh-blau" aria-hidden />
           ) : null}
         </a>
       )}
@@ -503,9 +517,6 @@ function CommandPalette({
             placeholder="Navigieren …"
             className="h-11 w-full bg-transparent text-sm text-jh-text outline-none placeholder:text-jh-text-hint"
           />
-          <kbd className="hidden rounded border border-jh-border px-1.5 py-0.5 text-[10px] text-jh-text-hint sm:inline">
-            Esc
-          </kbd>
         </div>
         <ul className="max-h-72 overflow-y-auto py-1">
           {filtered.length === 0 ? (
@@ -518,7 +529,7 @@ function CommandPalette({
                   onClick={onClose}
                   className={[
                     "flex items-center justify-between px-3 py-2 text-sm transition-colors duration-jh hover:bg-black/[0.03]",
-                    isActive(pathname, item.href) ? "text-jh-blau font-medium" : "text-jh-text",
+                    isActive(pathname, item.href) ? "font-medium text-jh-blau" : "text-jh-text",
                   ].join(" ")}
                 >
                   <span>{item.label}</span>
