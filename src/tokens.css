@@ -1,0 +1,64 @@
+/* @josef-hebel/ui – einzige Quelle für Farben und Maße.
+   Apps importieren: import "@josef-hebel/ui/tokens.css"
+   Keine Hex-Werte außerhalb dieser Datei. */
+
+:root {
+  --jh-blau: #005a9a;
+  --jh-blau-hover: #004a80;
+  --jh-blau-tint: rgba(0, 90, 154, 0.08);
+
+  /* Ausschließlich Aktiv-Indikator in der Navigation */
+  --jh-gelb: #e8e000;
+
+  --jh-text: #1a1a1a;
+  --jh-text-muted: #5f5e5a;
+  --jh-text-hint: #888780;
+
+  --jh-surface: #ffffff;
+  --jh-surface-alt: #f7f7f5;
+
+  --jh-border: rgba(0, 0, 0, 0.07);
+  --jh-border-strong: rgba(0, 0, 0, 0.14);
+
+  --jh-rot-bg: #fdecea;
+  --jh-rot-fg: #c0392b;
+  --jh-gelb-bg: #fdf6e3;
+  --jh-gelb-fg: #b8860b;
+  --jh-gruen-bg: #eafaf1;
+  --jh-gruen-fg: #1e8449;
+
+  --jh-radius: 8px;
+  --jh-header-h: 56px;
+
+  --jh-shadow-header: 0 1px 0 transparent;
+  --jh-shadow-scrolled: 0 1px 0 var(--jh-border), 0 4px 12px rgba(0, 0, 0, 0.06);
+  --jh-overlay: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] {
+  --jh-blau: #4a9fd4;
+  --jh-blau-hover: #6bb3de;
+  --jh-blau-tint: rgba(74, 159, 212, 0.14);
+
+  --jh-gelb: #e8e000;
+
+  --jh-text: #f0f2f5;
+  --jh-text-muted: #c8ced6;
+  --jh-text-hint: #aeb6c0;
+
+  --jh-surface: #232830;
+  --jh-surface-alt: #282e38;
+
+  --jh-border: rgba(255, 255, 255, 0.1);
+  --jh-border-strong: rgba(255, 255, 255, 0.18);
+
+  --jh-rot-bg: #4a2a28;
+  --jh-rot-fg: #f07167;
+  --jh-gelb-bg: #3d3420;
+  --jh-gelb-fg: #e8c547;
+  --jh-gruen-bg: #1e3a2a;
+  --jh-gruen-fg: #3dbf6e;
+
+  --jh-shadow-scrolled: 0 1px 0 var(--jh-border), 0 8px 20px rgba(0, 0, 0, 0.35);
+  --jh-overlay: rgba(0, 0, 0, 0.55);
+}
