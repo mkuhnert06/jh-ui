@@ -23,6 +23,16 @@ export type AppShellProps = {
   actions?: ReactNode;
   /** Slot rechts vor SharePoint (z. B. StatusPill, Sync). */
   status?: ReactNode;
+  /**
+   * Ersetzt die Standard-Desktop-Navigation (Zeile 2).
+   * Wenn gesetzt, wird die eingebaute Top/Mehr-Nav nicht gerendert.
+   */
+  navSlot?: ReactNode;
+  /**
+   * Ersetzt Burger + MobileNav. Wenn gesetzt, steuert die App das Mobile-Menü selbst
+   * (Button gehört typischerweise in den Slot).
+   */
+  mobileNavSlot?: ReactNode;
   sharepointUrl?: string;
   sharepointLabel?: string;
   /** Blaue Wortmarke (helle Flächen). Ohne Pfad: Bildmarke als Fallback. */
@@ -79,6 +89,8 @@ export function AppShell({
   user,
   status,
   actions,
+  navSlot,
+  mobileNavSlot,
   sharepointUrl,
   sharepointLabel = "SharePoint",
   logoSrc,
@@ -165,14 +177,18 @@ export function AppShell({
         {/* Zeile 1 – Metazeile */}
         <div className="border-b border-jh-border">
           <div className="mx-auto flex h-9 max-w-[1600px] items-center gap-3 px-3 sm:px-4">
-            <button
-              type="button"
-              className="rounded-jh p-1 text-jh-text-muted lg:hidden hover:bg-black/[0.03]"
-              aria-label="Menü"
-              onClick={() => setMobileOpen(true)}
-            >
-              <MenuIcon />
-            </button>
+            {mobileNavSlot ? (
+              mobileNavSlot
+            ) : (
+              <button
+                type="button"
+                className="rounded-jh p-1 text-jh-text-muted lg:hidden hover:bg-black/[0.03]"
+                aria-label="Menü"
+                onClick={() => setMobileOpen(true)}
+              >
+                <MenuIcon />
+              </button>
+            )}
 
             <span className="min-w-0 truncate text-xs font-medium text-jh-text sm:text-[13px]">
               {appName}
@@ -264,89 +280,93 @@ export function AppShell({
         {/* Zeile 2 – Navigation + Logo, blaue Unterlinie */}
         <div className="border-b-2 border-jh-blau">
           <div className="mx-auto flex h-12 max-w-[1600px] items-stretch gap-3 px-3 sm:h-14 sm:px-4">
-            <nav
-              className="relative hidden min-w-0 flex-1 items-stretch lg:flex"
-              aria-label="Hauptnavigation"
-            >
-              <ul className="flex min-w-0 items-stretch gap-0.5">
-                {top.map((item) => (
-                  <NavTab key={item.href + item.label} item={item} pathname={pathname} />
-                ))}
-                {mehr.length > 0 ? (
-                  <li ref={mehrRef} className="relative flex items-stretch">
-                    <button
-                      type="button"
-                      aria-expanded={mehrOpen}
-                      aria-haspopup="menu"
-                      onClick={() => setMehrOpen((o) => !o)}
-                      className={[
-                        "relative flex items-center gap-1 px-2.5 text-sm transition-colors duration-jh",
-                        mehr.some(
+            {navSlot ? (
+              <div className="relative min-w-0 flex-1">{navSlot}</div>
+            ) : (
+              <nav
+                className="relative hidden min-w-0 flex-1 items-stretch lg:flex"
+                aria-label="Hauptnavigation"
+              >
+                <ul className="flex min-w-0 items-stretch gap-0.5">
+                  {top.map((item) => (
+                    <NavTab key={item.href + item.label} item={item} pathname={pathname} />
+                  ))}
+                  {mehr.length > 0 ? (
+                    <li ref={mehrRef} className="relative flex items-stretch">
+                      <button
+                        type="button"
+                        aria-expanded={mehrOpen}
+                        aria-haspopup="menu"
+                        onClick={() => setMehrOpen((o) => !o)}
+                        className={[
+                          "relative flex items-center gap-1 px-2.5 text-sm transition-colors duration-jh",
+                          mehr.some(
+                            (m) =>
+                              isActive(pathname, m.href) ||
+                              m.children?.some((c) => isActive(pathname, c.href)),
+                          )
+                            ? "font-medium text-jh-blau"
+                            : "font-normal text-jh-blau/80 hover:text-jh-blau",
+                        ].join(" ")}
+                      >
+                        Mehr
+                        <Chevron />
+                        {mehr.some(
                           (m) =>
                             isActive(pathname, m.href) ||
                             m.children?.some((c) => isActive(pathname, c.href)),
-                        )
-                          ? "font-medium text-jh-blau"
-                          : "font-normal text-jh-blau/80 hover:text-jh-blau",
-                      ].join(" ")}
-                    >
-                      Mehr
-                      <Chevron />
-                      {mehr.some(
-                        (m) =>
-                          isActive(pathname, m.href) ||
-                          m.children?.some((c) => isActive(pathname, c.href)),
-                      ) ? (
-                        <span
-                          className="absolute inset-x-0 bottom-0 h-0.5 bg-jh-blau"
-                          aria-hidden
-                        />
-                      ) : null}
-                    </button>
-                    {mehrOpen ? (
-                      <ul
-                        role="menu"
-                        className="absolute left-0 top-full z-50 mt-0 min-w-[11rem] border border-jh-border border-t-2 border-t-jh-blau bg-jh-surface py-1 shadow-lg"
-                      >
-                        {mehr.map((item) => (
-                          <li key={item.href + item.label} role="none">
-                            <a
-                              role="menuitem"
-                              href={item.href}
-                              onClick={() => setMehrOpen(false)}
-                              className={[
-                                "block px-3 py-2 text-sm transition-colors duration-jh",
-                                isActive(pathname, item.href)
-                                  ? "font-medium text-jh-blau"
-                                  : "text-jh-text-muted hover:bg-black/[0.03] hover:text-jh-blau",
-                              ].join(" ")}
-                            >
-                              {item.label}
-                            </a>
-                            {item.children?.map((child) => (
+                        ) ? (
+                          <span
+                            className="absolute inset-x-0 bottom-0 h-0.5 bg-jh-blau"
+                            aria-hidden
+                          />
+                        ) : null}
+                      </button>
+                      {mehrOpen ? (
+                        <ul
+                          role="menu"
+                          className="absolute left-0 top-full z-50 mt-0 min-w-[11rem] border border-jh-border border-t-2 border-t-jh-blau bg-jh-surface py-1 shadow-lg"
+                        >
+                          {mehr.map((item) => (
+                            <li key={item.href + item.label} role="none">
                               <a
-                                key={child.href + child.label}
                                 role="menuitem"
-                                href={child.href}
+                                href={item.href}
                                 onClick={() => setMehrOpen(false)}
                                 className={[
-                                  "block px-3 py-2 pl-5 text-sm transition-colors duration-jh",
-                                  isActive(pathname, child.href)
+                                  "block px-3 py-2 text-sm transition-colors duration-jh",
+                                  isActive(pathname, item.href)
                                     ? "font-medium text-jh-blau"
                                     : "text-jh-text-muted hover:bg-black/[0.03] hover:text-jh-blau",
                                 ].join(" ")}
                               >
-                                {child.label}
+                                {item.label}
                               </a>
-                            ))}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </li>
-                ) : null}
-              </ul>
-            </nav>
+                              {item.children?.map((child) => (
+                                <a
+                                  key={child.href + child.label}
+                                  role="menuitem"
+                                  href={child.href}
+                                  onClick={() => setMehrOpen(false)}
+                                  className={[
+                                    "block px-3 py-2 pl-5 text-sm transition-colors duration-jh",
+                                    isActive(pathname, child.href)
+                                      ? "font-medium text-jh-blau"
+                                      : "text-jh-text-muted hover:bg-black/[0.03] hover:text-jh-blau",
+                                  ].join(" ")}
+                                >
+                                  {child.label}
+                                </a>
+                              ))}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </li>
+                  ) : null}
+                </ul>
+              </nav>
+            )}
 
             <div className="ml-auto flex shrink-0 items-center py-2">
               <a href="/" className="flex items-center" aria-label="Zur Startseite">
@@ -365,13 +385,15 @@ export function AppShell({
         </div>
       </header>
 
-      <MobileNav
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        appName={appName}
-        nav={nav}
-        pathname={pathname}
-      />
+      {!mobileNavSlot ? (
+        <MobileNav
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          appName={appName}
+          nav={nav}
+          pathname={pathname}
+        />
+      ) : null}
 
       {searchOpen ? (
         <CommandPalette
