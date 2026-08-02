@@ -57,10 +57,53 @@ function isActive(pathname: string | undefined, href: string): boolean {
 function flattenNav(items: NavItem[]): NavItem[] {
   const out: NavItem[] = [];
   for (const item of items) {
-    out.push(item);
+    if (!item.heading) out.push(item);
     if (item.children) out.push(...flattenNav(item.children));
   }
   return out;
+}
+
+function NavMenuChild({
+  child,
+  pathname,
+  onNavigate,
+}: {
+  child: NavItem;
+  pathname?: string;
+  onNavigate?: () => void;
+}) {
+  if (child.heading) {
+    return (
+      <li key={`h-${child.label}`} role="presentation">
+        <div className="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-[0.06em] text-jh-text-muted">
+          {child.label}
+        </div>
+      </li>
+    );
+  }
+  return (
+    <li key={child.href + child.label} role="none">
+      <a
+        role="menuitem"
+        href={child.href}
+        onClick={onNavigate}
+        className={[
+          "block px-3 py-2 text-sm transition-colors duration-jh",
+          isActive(pathname, child.href)
+            ? "font-medium text-jh-blau"
+            : "text-jh-text-muted hover:bg-black/[0.03] hover:text-jh-blau",
+        ].join(" ")}
+      >
+        {child.label}
+      </a>
+    </li>
+  );
+}
+
+function navItemIsActive(pathname: string | undefined, item: NavItem): boolean {
+  if (item.heading) return false;
+  if (isActive(pathname, item.href)) return true;
+  return !!item.children?.some((c) => navItemIsActive(pathname, c));
 }
 
 function readTheme(): "light" | "dark" {
@@ -300,22 +343,14 @@ export function AppShell({
                         onClick={() => setMehrOpen((o) => !o)}
                         className={[
                           "relative flex items-center gap-1 px-2.5 text-sm transition-colors duration-jh",
-                          mehr.some(
-                            (m) =>
-                              isActive(pathname, m.href) ||
-                              m.children?.some((c) => isActive(pathname, c.href)),
-                          )
+                          mehr.some((m) => navItemIsActive(pathname, m))
                             ? "font-medium text-jh-blau"
                             : "font-normal text-jh-blau/80 hover:text-jh-blau",
                         ].join(" ")}
                       >
                         Mehr
                         <Chevron />
-                        {mehr.some(
-                          (m) =>
-                            isActive(pathname, m.href) ||
-                            m.children?.some((c) => isActive(pathname, c.href)),
-                        ) ? (
+                        {mehr.some((m) => navItemIsActive(pathname, m)) ? (
                           <span
                             className="absolute inset-x-0 bottom-0 h-0.5 bg-jh-blau"
                             aria-hidden
@@ -325,39 +360,41 @@ export function AppShell({
                       {mehrOpen ? (
                         <ul
                           role="menu"
-                          className="absolute left-0 top-full z-50 mt-0 min-w-[11rem] border border-jh-border border-t-2 border-t-jh-blau bg-jh-surface py-1 shadow-lg"
+                          className="absolute left-0 top-full z-50 mt-0 min-w-[12rem] border border-jh-border border-t-2 border-t-jh-blau bg-jh-surface py-1 shadow-lg"
                         >
                           {mehr.map((item) => (
                             <li key={item.href + item.label} role="none">
-                              <a
-                                role="menuitem"
-                                href={item.href}
-                                onClick={() => setMehrOpen(false)}
-                                className={[
-                                  "block px-3 py-2 text-sm transition-colors duration-jh",
-                                  isActive(pathname, item.href)
-                                    ? "font-medium text-jh-blau"
-                                    : "text-jh-text-muted hover:bg-black/[0.03] hover:text-jh-blau",
-                                ].join(" ")}
-                              >
-                                {item.label}
-                              </a>
-                              {item.children?.map((child) => (
+                              {item.children?.length ? (
+                                <>
+                                  <div className="px-3 py-2 text-sm font-medium text-jh-text">
+                                    {item.label}
+                                  </div>
+                                  <ul>
+                                    {item.children.map((child) => (
+                                      <NavMenuChild
+                                        key={(child.heading ? "h-" : "") + child.href + child.label}
+                                        child={child}
+                                        pathname={pathname}
+                                        onNavigate={() => setMehrOpen(false)}
+                                      />
+                                    ))}
+                                  </ul>
+                                </>
+                              ) : (
                                 <a
-                                  key={child.href + child.label}
                                   role="menuitem"
-                                  href={child.href}
+                                  href={item.href}
                                   onClick={() => setMehrOpen(false)}
                                   className={[
-                                    "block px-3 py-2 pl-5 text-sm transition-colors duration-jh",
-                                    isActive(pathname, child.href)
+                                    "block px-3 py-2 text-sm transition-colors duration-jh",
+                                    isActive(pathname, item.href)
                                       ? "font-medium text-jh-blau"
                                       : "text-jh-text-muted hover:bg-black/[0.03] hover:text-jh-blau",
                                   ].join(" ")}
                                 >
-                                  {child.label}
+                                  {item.label}
                                 </a>
-                              ))}
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -411,9 +448,7 @@ export function AppShell({
 function NavTab({ item, pathname }: { item: NavItem; pathname?: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLLIElement>(null);
-  const active =
-    isActive(pathname, item.href) ||
-    !!item.children?.some((c) => isActive(pathname, c.href));
+  const active = navItemIsActive(pathname, item);
   const hasChildren = !!item.children?.length;
 
   useEffect(() => {
@@ -450,39 +485,15 @@ function NavTab({ item, pathname }: { item: NavItem; pathname?: string }) {
           {open ? (
             <ul
               role="menu"
-              className="absolute left-0 top-full z-50 mt-0 min-w-[11rem] border border-jh-border border-t-2 border-t-jh-blau bg-jh-surface py-1 shadow-lg"
+              className="absolute left-0 top-full z-50 mt-0 min-w-[12rem] border border-jh-border border-t-2 border-t-jh-blau bg-jh-surface py-1 shadow-lg"
             >
-              <li role="none">
-                <a
-                  role="menuitem"
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className={[
-                    "block px-3 py-2 text-sm transition-colors duration-jh",
-                    isActive(pathname, item.href)
-                      ? "font-medium text-jh-blau"
-                      : "text-jh-text-muted hover:bg-black/[0.03] hover:text-jh-blau",
-                  ].join(" ")}
-                >
-                  {item.label}
-                </a>
-              </li>
               {item.children!.map((child) => (
-                <li key={child.href + child.label} role="none">
-                  <a
-                    role="menuitem"
-                    href={child.href}
-                    onClick={() => setOpen(false)}
-                    className={[
-                      "block px-3 py-2 text-sm transition-colors duration-jh",
-                      isActive(pathname, child.href)
-                        ? "font-medium text-jh-blau"
-                        : "text-jh-text-muted hover:bg-black/[0.03] hover:text-jh-blau",
-                    ].join(" ")}
-                  >
-                    {child.label}
-                  </a>
-                </li>
+                <NavMenuChild
+                  key={(child.heading ? "h-" : "") + child.href + child.label}
+                  child={child}
+                  pathname={pathname}
+                  onNavigate={() => setOpen(false)}
+                />
               ))}
             </ul>
           ) : null}

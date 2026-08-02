@@ -60,38 +60,52 @@ export function MobileNav({ open, onClose, appName, nav, pathname }: MobileNavPr
         <ul className="flex-1 overflow-y-auto p-2">
           {nav.map((item) => (
             <li key={item.href + item.label}>
-              <a
-                href={item.href}
-                onClick={onClose}
-                className={[
-                  "block rounded-jh px-3 py-2.5 text-sm transition-colors duration-jh",
-                  isActive(pathname, item.href)
-                    ? "bg-jh-blau-tint font-medium text-jh-blau"
-                    : "text-jh-text-muted hover:bg-black/[0.03]",
-                ].join(" ")}
-              >
-                {item.label}
-              </a>
               {item.children?.length ? (
-                <ul className="mb-1 ml-2 border-l border-jh-border pl-2">
-                  {item.children.map((child) => (
-                    <li key={child.href + child.label}>
-                      <a
-                        href={child.href}
-                        onClick={onClose}
-                        className={[
-                          "block rounded-jh px-3 py-2 text-sm transition-colors duration-jh",
-                          isActive(pathname, child.href)
-                            ? "bg-jh-blau-tint font-medium text-jh-blau"
-                            : "text-jh-text-muted hover:bg-black/[0.03]",
-                        ].join(" ")}
-                      >
-                        {child.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+                <>
+                  <div className="px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-jh-text">
+                    {item.label}
+                  </div>
+                  <ul className="mb-1 ml-1 border-l border-jh-border pl-2">
+                    {item.children.map((child) =>
+                      child.heading ? (
+                        <li key={`h-${child.label}`}>
+                          <div className="px-3 pb-0.5 pt-2 text-xs font-bold uppercase tracking-[0.06em] text-jh-text-muted">
+                            {child.label}
+                          </div>
+                        </li>
+                      ) : (
+                        <li key={child.href + child.label}>
+                          <a
+                            href={child.href}
+                            onClick={onClose}
+                            className={[
+                              "block rounded-jh px-3 py-2.5 text-[15px] leading-snug transition-colors duration-jh",
+                              isActive(pathname, child.href)
+                                ? "bg-jh-blau-tint font-medium text-jh-blau"
+                                : "text-jh-text hover:bg-black/[0.03]",
+                            ].join(" ")}
+                          >
+                            {child.label}
+                          </a>
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                </>
+              ) : (
+                <a
+                  href={item.href}
+                  onClick={onClose}
+                  className={[
+                    "block rounded-jh px-3 py-2.5 text-sm transition-colors duration-jh",
+                    isActive(pathname, item.href)
+                      ? "bg-jh-blau-tint font-medium text-jh-blau"
+                      : "text-jh-text-muted hover:bg-black/[0.03]",
+                  ].join(" ")}
+                >
+                  {item.label}
+                </a>
+              )}
             </li>
           ))}
         </ul>
