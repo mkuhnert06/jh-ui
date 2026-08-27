@@ -241,8 +241,12 @@ export function AppShell({
               <div className="flex min-w-0 items-center gap-1.5">{actions}</div>
             ) : null}
 
-            <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
-              {status ? <div className="flex items-center gap-1.5">{status}</div> : null}
+            <div className="ml-auto flex min-w-0 items-center gap-1.5 overflow-visible sm:gap-2">
+              {status ? (
+                <div className="relative z-[60] flex items-center gap-1.5 overflow-visible">
+                  {status}
+                </div>
+              ) : null}
 
               {sharepointUrl ? (
                 <a
