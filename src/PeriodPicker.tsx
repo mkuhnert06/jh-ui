@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -63,6 +64,8 @@ export function PeriodPicker({
   const max = maxProp ?? nowPeriod();
   const [open, setOpen] = useState(false);
   const [tabYear, setTabYear] = useState(value.year);
+  /** left = Popover wächst nach rechts (left-0); right = nach links (right-0) */
+  const [panelAlign, setPanelAlign] = useState<"left" | "right">("left");
   const rootRef = useRef<HTMLDivElement>(null);
   const listId = useId();
 
@@ -76,6 +79,18 @@ export function PeriodPicker({
   useEffect(() => {
     if (open) setTabYear(Math.min(value.year, max.year));
   }, [open, value.year, max.year]);
+
+  useLayoutEffect(() => {
+    if (!open || !rootRef.current) return;
+    const rect = rootRef.current.getBoundingClientRect();
+    const panelW = 256; // w-64
+    const spaceRight = window.innerWidth - rect.left;
+    const spaceLeft = rect.right;
+    // Nah am linken Rand: nach rechts öffnen, sonst nach links (wie bisher).
+    if (spaceRight >= panelW + 12) setPanelAlign("left");
+    else if (spaceLeft >= panelW + 12) setPanelAlign("right");
+    else setPanelAlign(spaceRight >= spaceLeft ? "left" : "right");
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -131,7 +146,10 @@ export function PeriodPicker({
           id={listId}
           role="dialog"
           aria-label={label}
-          className="absolute right-0 z-50 mt-1.5 w-64 rounded-jh border border-jh-border bg-jh-surface p-2 shadow-lg"
+          className={[
+            "absolute z-50 mt-1.5 w-64 rounded-jh border border-jh-border bg-jh-surface p-2 shadow-lg",
+            panelAlign === "left" ? "left-0" : "right-0",
+          ].join(" ")}
         >
           <div className="mb-2 flex gap-1 overflow-x-auto">
             {years.map((y) => (
