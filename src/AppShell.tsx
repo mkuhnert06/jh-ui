@@ -150,6 +150,7 @@ export function AppShell({
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const mehrRef = useRef<HTMLLIElement>(null);
   const avatarRef = useRef<HTMLDivElement>(null);
+  const avatarDesktopRef = useRef<HTMLDivElement>(null);
 
   const displayName = formatName(user);
   const initialen = getInitialen(user);
@@ -192,7 +193,10 @@ export function AppShell({
     function onDoc(e: MouseEvent) {
       const t = e.target as Node;
       if (mehrRef.current && !mehrRef.current.contains(t)) setMehrOpen(false);
-      if (avatarRef.current && !avatarRef.current.contains(t)) setAvatarOpen(false);
+      const inAvatar =
+        !!avatarRef.current?.contains(t) ||
+        !!avatarDesktopRef.current?.contains(t);
+      if (!inAvatar) setAvatarOpen(false);
     }
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
@@ -210,22 +214,24 @@ export function AppShell({
     <div className="min-h-screen bg-jh-surface-alt font-sans text-jh-text">
       <header
         className={[
-          "sticky top-0 z-50 bg-jh-surface transition-[box-shadow] duration-jh",
+          "sticky top-0 z-50 transition-[box-shadow] duration-jh",
           scrolled ? "shadow-sm" : "",
         ].join(" ")}
         style={{
           boxShadow: scrolled ? "var(--jh-shadow-scrolled)" : "var(--jh-shadow-header)",
         }}
       >
-        {/* Zeile 1 – Metazeile */}
-        <div className="border-b border-jh-border">
-          <div className="mx-auto flex h-9 max-w-[1600px] items-center gap-3 px-3 sm:px-4">
+        {/* Mobile: eine Leiste Burger | Logo | Aktionen | Avatar */}
+        <div className="border-b-2 border-jh-gelb bg-jh-blau md:hidden">
+          <div className="mx-auto flex h-12 max-w-[1600px] items-center gap-2 px-3">
             {mobileNavSlot ? (
-              mobileNavSlot
+              <div className="shrink-0 text-jh-surface [&_button]:text-jh-surface [&_button]:hover:bg-white/10">
+                {mobileNavSlot}
+              </div>
             ) : (
               <button
                 type="button"
-                className="rounded-jh p-1 text-jh-text-muted lg:hidden hover:bg-black/[0.03]"
+                className="rounded-jh p-1 text-jh-surface hover:bg-white/10"
                 aria-label="Menü"
                 onClick={() => setMobileOpen(true)}
               >
@@ -233,6 +239,103 @@ export function AppShell({
               </button>
             )}
 
+            <a href="/" className="flex min-w-0 shrink items-center" aria-label="Zur Startseite">
+              {logoSrc ? (
+                <img
+                  src={logoSrc}
+                  alt={logoAlt}
+                  className="h-7 w-auto max-w-[9rem] object-contain object-left"
+                />
+              ) : (
+                <Logo size={28} variant="full" className="text-jh-surface" />
+              )}
+            </a>
+
+            <div className="ml-auto flex min-w-0 items-center gap-1.5">
+              {actions ? (
+                <div className="flex min-w-0 items-center gap-1 [&_button]:text-jh-surface [&_a]:text-jh-surface">
+                  {actions}
+                </div>
+              ) : null}
+              {status ? (
+                <div className="relative z-[60] flex items-center gap-1 overflow-visible [&_button]:text-jh-surface">
+                  {status}
+                </div>
+              ) : null}
+
+              <div ref={avatarRef} className="relative">
+                <button
+                  type="button"
+                  aria-expanded={avatarOpen}
+                  aria-haspopup="menu"
+                  onClick={() => setAvatarOpen((o) => !o)}
+                  className="flex items-center gap-1 rounded-jh px-1 py-0.5 text-jh-surface hover:bg-white/10"
+                  aria-label="Benutzermenü"
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] font-medium text-jh-surface">
+                    {initialen}
+                  </span>
+                  <Chevron />
+                </button>
+                {avatarOpen ? (
+                  <div
+                    role="menu"
+                    className="absolute right-0 top-full z-50 mt-1.5 min-w-[14rem] max-w-[calc(100vw-1.5rem)] rounded-jh border border-jh-border bg-jh-surface py-1 shadow-lg"
+                  >
+                    <div className="border-b border-jh-border px-3 py-2.5">
+                      <p className="text-sm font-medium text-jh-text [overflow-wrap:anywhere] hyphens-none">
+                        {displayName}
+                      </p>
+                      {user.rolle ? (
+                        <p className="mt-0.5 whitespace-nowrap text-xs text-jh-text-muted">
+                          {user.rolle}
+                        </p>
+                      ) : null}
+                    </div>
+                    {sharepointUrl ? (
+                      <a
+                        role="menuitem"
+                        href={sharepointUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block whitespace-nowrap px-3 py-2 text-sm text-jh-text-muted hover:bg-black/[0.03]"
+                        onClick={() => setAvatarOpen(false)}
+                      >
+                        {sharepointLabel}
+                      </a>
+                    ) : null}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        toggleTheme();
+                        setAvatarOpen(false);
+                      }}
+                      className="flex w-full whitespace-nowrap px-3 py-2 text-left text-sm text-jh-text-muted hover:bg-black/[0.03]"
+                    >
+                      {theme === "dark" ? "Hellmodus" : "Dunkelmodus"}
+                    </button>
+                    <form action={signOutHref} method="post">
+                      <button
+                        type="submit"
+                        role="menuitem"
+                        className="flex w-full whitespace-nowrap border-t border-jh-border px-3 py-2 text-left text-sm text-jh-text-muted hover:bg-black/[0.03]"
+                      >
+                        Abmelden
+                      </button>
+                    </form>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop: zwei Zeilen unverändert */}
+        <div className="hidden bg-jh-surface md:block">
+        {/* Zeile 1 – Metazeile */}
+        <div className="border-b border-jh-border">
+          <div className="mx-auto flex h-9 max-w-[1600px] items-center gap-3 px-3 sm:px-4">
             <span className="min-w-0 truncate text-xs font-medium text-jh-text sm:text-[13px]">
               {appName}
             </span>
@@ -259,7 +362,7 @@ export function AppShell({
                 </a>
               ) : null}
 
-              <div ref={avatarRef} className="relative">
+              <div ref={avatarDesktopRef} className="relative">
                 <button
                   type="button"
                   aria-expanded={avatarOpen}
@@ -271,32 +374,24 @@ export function AppShell({
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-jh-blau-tint text-[10px] font-medium text-jh-blau">
                     {initialen}
                   </span>
-                  <span className="hidden truncate sm:inline">{displayName}</span>
+                  <span className="hidden truncate sm:inline hyphens-none">{displayName}</span>
                   <Chevron />
                 </button>
                 {avatarOpen ? (
                   <div
                     role="menu"
-                    className="absolute right-0 top-full z-50 mt-1.5 w-64 rounded-jh border border-jh-border bg-jh-surface py-1 shadow-lg"
+                    className="absolute right-0 top-full z-50 mt-1.5 min-w-[14rem] rounded-jh border border-jh-border bg-jh-surface py-1 shadow-lg"
                   >
                     <div className="border-b border-jh-border px-3 py-2.5">
-                      <p className="text-sm font-medium text-jh-text">{displayName}</p>
+                      <p className="text-sm font-medium text-jh-text hyphens-none [overflow-wrap:anywhere]">
+                        {displayName}
+                      </p>
                       {user.rolle ? (
-                        <p className="mt-0.5 text-xs text-jh-text-muted">{user.rolle}</p>
+                        <p className="mt-0.5 whitespace-nowrap text-xs text-jh-text-muted">
+                          {user.rolle}
+                        </p>
                       ) : null}
                     </div>
-                    {sharepointUrl ? (
-                      <a
-                        role="menuitem"
-                        href={sharepointUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block px-3 py-2 text-sm text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03] sm:hidden"
-                        onClick={() => setAvatarOpen(false)}
-                      >
-                        {sharepointLabel}
-                      </a>
-                    ) : null}
                     <button
                       type="button"
                       role="menuitem"
@@ -304,7 +399,7 @@ export function AppShell({
                         toggleTheme();
                         setAvatarOpen(false);
                       }}
-                      className="flex w-full px-3 py-2 text-left text-sm text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03]"
+                      className="flex w-full whitespace-nowrap px-3 py-2 text-left text-sm text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03]"
                     >
                       {theme === "dark" ? "Hellmodus" : "Dunkelmodus"}
                     </button>
@@ -312,7 +407,7 @@ export function AppShell({
                       <button
                         type="submit"
                         role="menuitem"
-                        className="flex w-full border-t border-jh-border px-3 py-2 text-left text-sm text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03]"
+                        className="flex w-full whitespace-nowrap border-t border-jh-border px-3 py-2 text-left text-sm text-jh-text-muted transition-colors duration-jh hover:bg-black/[0.03]"
                       >
                         Abmelden
                       </button>
@@ -423,6 +518,7 @@ export function AppShell({
               </a>
             </div>
           </div>
+        </div>
         </div>
       </header>
 
